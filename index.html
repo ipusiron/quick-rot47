@@ -12,18 +12,27 @@
     <p class="subtitle">ASCII可視文字を47文字シフトするROT47変換ツール</p>
 
     <div class="input-area">
-      <label for="inputText">入力テキスト</label>
+      <div class="input-header">
+        <label for="inputText">入力テキスト</label>
+        <button class="sample-btn" onclick="setSampleText()">サンプル: Hello World! 123</button>
+      </div>
       <textarea id="inputText" rows="6" placeholder="ここに平文または暗号文を入力..."></textarea>
     </div>
 
     <div class="button-area">
       <button onclick="convertText()">変換する</button>
-      <button onclick="copyResult()">コピー</button>
     </div>
 
     <div class="output-area">
       <label for="outputText">出力テキスト</label>
-      <textarea id="outputText" rows="6" readonly></textarea>
+      <div class="output-wrapper">
+        <textarea id="outputText" rows="6" readonly></textarea>
+        <div class="copy-btn-container">
+          <button class="copy-btn" onclick="copyResult()">コピー</button>
+          <button class="set-input-btn" onclick="setToInput()">入力テキストにセット</button>
+          <div class="toast" id="toast">クリップボードにコピーしました</div>
+        </div>
+      </div>
     </div>
   </div>
 
