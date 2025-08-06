@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>QuickROT47 - ROT47変換ツール</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 QuickROT47</h1>
+    <p class="subtitle">ASCII可視文字を47文字シフトするROT47変換ツール</p>
+
+    <div class="input-area">
+      <label for="inputText">入力テキスト</label>
+      <textarea id="inputText" rows="6" placeholder="ここに平文または暗号文を入力..."></textarea>
+    </div>
+
+    <div class="button-area">
+      <button onclick="convertText()">変換する</button>
+      <button onclick="copyResult()">コピー</button>
+    </div>
+
+    <div class="output-area">
+      <label for="outputText">出力テキスト</label>
+      <textarea id="outputText" rows="6" readonly></textarea>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer">
+      🔗 GitHubリポジトリはこちら（ 
+      <a href="https://github.com/ipusiron/quick-rot47" target="_blank">
+        ipusiron/quick-rot47
+      </a> ）
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
