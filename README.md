@@ -6,9 +6,7 @@
 ![GitHub license](https://img.shields.io/github/license/ipusiron/quick-rot47)
 [![GitHub Pages](https://img.shields.io/badge/demo-GitHub%20Pages-blue?logo=github)](https://ipusiron.github.io/quick-rot47/)
 
----
-
-## 📝 概要
+**Day037 - 生成AIで作るセキュリティツール100**
 
 **QuickROT47** は、ASCII可視文字（33〜126）を対象に47文字分ずらして変換する軽量暗号方式「ROT47」を、即座に体験できるシンプルなWebツールです。
 
@@ -22,7 +20,6 @@
 - ✅ 入力欄・出力欄のシンプルな2カラム構成
 - ✅ 複数行入力対応（メモや文章も変換可）
 - ✅ コピー用ボタンつき
-- ✅ ダークモード対応（※後日対応予定）
 
 ---
 
