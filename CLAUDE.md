@@ -16,7 +16,7 @@ This is a static website project with no build system:
 ## Architecture
 
 ### Core Implementation
-The ROT47 algorithm is implemented in `script.js:2-10`:
+The ROT47 algorithm is implemented in `script.js:2-11`:
 - Takes ASCII characters in range 33-126
 - Shifts each character by 47 positions within the 94-character range
 - Non-printable ASCII characters are left unchanged
@@ -29,12 +29,14 @@ The ROT47 algorithm is implemented in `script.js:2-10`:
 
 ### Key Functions
 - `rot47()` in `script.js:2` - Core ROT47 transformation logic
-- `convertText()` in `script.js:13` - Handles button click to transform input text
-- `copyResult()` in `script.js:20` - Copies output to clipboard using legacy `document.execCommand`
+- `convertText()` in `script.js:15` - Handles button click to transform input text
+- `copyResult()` in `script.js:22` - Copies output to clipboard (uses modern Clipboard API with `document.execCommand` fallback)
+- `showToast()` in `script.js:45` - Displays temporary notification messages
+- `setToInput()` in `script.js:62` - Copies output back to input for re-encoding
+- `setSampleText()` in `script.js:72` - Populates input with sample text "Hello World! 123"
 
 ## Important Notes
 
 - ROT47 is reversible - applying it twice returns the original text
-- The copy function uses the deprecated `document.execCommand('copy')` API which should be updated to modern Clipboard API for better browser support
 - No external dependencies or frameworks are used
 - Project is part of a "100 Security Tools with AI" initiative

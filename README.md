@@ -1,3 +1,40 @@
+<!--
+---
+id: day037
+slug: quick-rot47
+
+title: "QuickROT47"
+
+subtitle_ja: "ROT47変換ツール"
+subtitle_en: "ROT47 Encoder/Decoder"
+
+description_ja: "ASCII可視文字（33〜126）を対象に47文字分ずらして変換する軽量暗号方式「ROT47」を即座に体験できるシンプルなWebツール"
+description_en: "A simple web tool for instantly encoding and decoding text using ROT47 cipher, which shifts ASCII printable characters (33-126) by 47 positions"
+
+category_ja:
+  - 現代暗号
+  - エンコード/デコード
+category_en:
+  - Modern Cryptography
+  - Encoding/Decoding
+
+difficulty: 1
+
+tags:
+  - ROT47
+  - cipher
+  - encoding
+  - decoding
+  - ASCII
+  - CTF
+
+repo_url: "https://github.com/ipusiron/quick-rot47"
+demo_url: "https://ipusiron.github.io/quick-rot47/"
+
+hub: true
+---
+-->
+
 # QuickROT47 - ROT47変換ツール
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/ipusiron/quick-rot47?style=social)
