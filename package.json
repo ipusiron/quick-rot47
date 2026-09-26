@@ -1,0 +1,10 @@
+{
+  "name": "quick-rot47",
+  "version": "2.0.0",
+  "private": true,
+  "description": "ROT47 encoder/decoder (Day037 of 100 Security Tools with Generative AI)",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test"
+  }
+}
