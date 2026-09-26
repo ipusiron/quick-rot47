@@ -51,9 +51,9 @@ ROT47 has no key and provides no real security. This tool is made for learning h
 - ✅ A character table shows every character the method changes and what it becomes (characters in the input are outlined)
 - ✅ Guesses which method hid a text, by how much each result looks like English
 - ✅ With "Convert as I type" on, the output follows the input as you type
-- ✅ Two samples: plain text and ROT47 text
+- ✅ Two samples: plain text, and text hidden with the chosen method
 - ✅ Shows how many characters were converted and how many were left as they are (spaces, line breaks, non-ASCII text and so on)
-- ✅ Tells you when full-width letters, digits or symbols are mixed in, because ROT47 does not convert them
+- ✅ Tells you when full-width letters, digits or symbols are mixed in, because no method converts them
 - ✅ Copies the output (if the page cannot copy, it selects the output and tells you how to copy it by hand)
 - ✅ Moves the output into the input and converts it again in one click
 - ✅ Japanese and English UI (button at the top of the page)
@@ -63,12 +63,12 @@ ROT47 has no key and provides no real security. This tool is made for learning h
 
 ## 🧭 How to Use
 
-1. Choose a method (ROT47 at first)
+1. Choose a method (ROT47 when the page opens)
 2. Type text into the input (or use a sample button)
 3. Press "Convert"
-4. Copy the output. "Use as input" moves the output into the input and converts it again (except for ROT-N, the output goes back to the original text)
+4. Copy the output. "Use as input" moves the output into the input and converts it again (with a method that undoes itself, the output goes back to the original text)
 
-If you do not know how a text was hidden, press "Guess" under "Guess the method" to list the candidates, most English-like first.
+If you do not know how a text was hidden, type it into the input and press "Guess" under "Guess the method". The candidates are listed most English-like first.
 The "?" button at the top of the page opens the help dialog.
 
 ---
@@ -124,7 +124,7 @@ ROT-N shifts letters by N (the Caesar cipher). Unless N is 13, applying it again
 ### Reading the character table
 
 The table lists every character the chosen method changes, as "character → result".
-Symbols, digits, uppercase and lowercase letters have their own colors, and characters in the input are outlined. You can see at a glance that ROT47 turns letters into symbols and digits too, while ROT13 swaps letters with letters.
+The color of a cell shows the kind of the original character (symbol, digit, uppercase or lowercase letter), and characters in the input are outlined. You can see at a glance that ROT47 turns letters into symbols and digits too, while ROT13 swaps letters with letters.
 
 ---
 
@@ -141,10 +141,12 @@ Symbols, digits, uppercase and lowercase letters have their own colors, and char
 Methods that give the same result count once (for example, ROT18 on text without digits is ROT13).
 Each result gets an English-likeness score from the following, and up to five are shown, highest first:
 
-- The share of letters that belong to common English words (about 200, such as the, and and flag)
+- The share of letters that belong to common English and CTF words (153 words, such as the, and and flag). Digits inside a word are read as leetspeak (`w3lc0m3` is `welcome`)
 - How close the letter frequencies are to average English (a chi-squared value)
 - The share of symbols that rarely appear in English (more lowers the score)
-- The shape of a CTF flag such as `flag{…}` or `picoCTF{…}` (raises the score)
+- The shape of a CTF flag such as `flag{…}`, `HTB{…}` or `picoCTF{…}` (raises the score, more for a well-known prefix; `{`, `}` and `_` inside the flag are not counted as symbols)
+
+When the best score is low, or the lead over the next result is small, the page says that the guess is not reliable.
 
 ### Examples of guesses
 
@@ -154,13 +156,16 @@ The tests check these examples every time:
 | --- | --- | --- |
 | `` %96 BF:4< 3C@H? 7@I ;F>AD @G6C E96 =2KJ 5@8 `` | ROT47 | `` The quick brown fox jumps over the lazy dog `` |
 | `` Zrrg zr ng abba ol gur byq oevqtr `` | ROT13 | `` Meet me at noon by the old bridge `` |
-| `` Dwwdfn dw gdzq `` | ROT-23 | `` Attack at dawn `` |
+| `` Dwwdfn dw gdzq `` | ROT-23 (undoes ROT-3) | `` Attack at dawn `` |
 | `` A:4@r%uLC_Ecf0`D0?_E04CJAE_N `` | ROT47 | `` picoCTF{r0t47_1s_n0t_crypt0} `` |
+| `` UGO{j3yp0z3_g0_gu3_w0hea3l} `` | ROT13 | `` HTB{w3lc0m3_t0_th3_j0urn3y} `` |
 
 ### Limits
 
 - It assumes English text, so it can be wrong for non-English text or text of only a few words
-- Text without Latin letters (digits only, for example) is not judged
+- Text without half-width letters, digits or symbols is not judged. Text of only digits or symbols is judged, because ROT47 turns it into letters, but the result is often meaningless
+- Results that differ only in digits, such as ROT13 and ROT18 or no conversion and ROT5, get the same score unless the digits are part of words (leetspeak). Both are then marked as tied
+- Text that is not English prose (program code, for example) can look less English than one of its rotations
 - It cannot recognize text hidden with several methods in a row, or with methods other than ROT (such as Base64)
 
 ---
@@ -224,7 +229,7 @@ w6==@ (@C=5P
 
 ### Full-width and Japanese text
 
-Full-width letters, digits and symbols (such as "Ａ", "１" and "！") are different characters from ASCII. ROT47 does not convert them.
+Full-width letters, digits and symbols (such as "Ａ", "１" and "！") are different characters from ASCII. None of the methods converts them.
 Japanese characters and emoji are not converted either.
 
 When full-width letters, digits or symbols are mixed into the input, the tool shows a note with how many there are.
@@ -457,16 +462,16 @@ quick-rot47/
 | Element | Description |
 |---------|-------------|
 | **Method** | ROT47, ROT13, ROT5, ROT18 or ROT-N. Choosing another method converts the input again with it |
-| **Shift (N)** | Shown for ROT-N only. 1 to 25 (other numbers become their remainder modulo 26, and 0 becomes 13) |
+| **Shift (N)** | Shown for ROT-N only. A whole number from 1 to 25. Other whole numbers become their remainder modulo 26 (13 if that is 0); an empty field or anything else goes back to the previous shift |
 | **Switch to the undo shift** | Changes N to the shift that undoes ROT-N (26 − N) |
-| **Input text** | A multi-line input. The sample buttons fill in plain text or the text converted with the chosen method |
+| **Input text** | A multi-line input. The sample buttons fill in plain text, or text that the chosen method turns back into the plain text |
 | **Convert** | Converts the input with the chosen method and puts the result in the output |
 | **Convert as I type** | When on, the output follows the input as you type |
 | **Output text** | The result (read-only). Below it, the counts of converted characters and characters left as they are |
 | **Copy** | Copies the output to the clipboard. If the page cannot copy, it selects the output and tells you how to copy it by hand |
-| **Use as input** | Moves the output into the input and converts it again at once (except for ROT-N, the output goes back to the original text) |
-| **Character table** | Lists every character the chosen method changes, colored by kind, with the characters in the input outlined |
-| **Guess the method** | Shows up to five results, most English-like first. "Convert with this method" chooses that method and converts |
+| **Use as input** | Moves the output into the input and converts it again at once. With a method that undoes itself, the output goes back to the original text; ROT-N (N ≠ 13) shifts it by N once more |
+| **Character table** | Lists every character the chosen method changes, colored by the kind of the original character, with the characters in the input outlined |
+| **Guess the method** | Shows up to five results, most English-like first. "Convert with (method)" chooses that method and converts. Ties and unreliable guesses are pointed out. Changing the input clears the results |
 | **Status** | Shows the result of an action for 4 seconds (also read out by screen readers) |
 | **Help (?)** | Explains ROT47 and its relatives, how to use the tool, the guess and what to watch out for |
 | **Language button** | Switches between Japanese and English. The choice is saved in the browser |

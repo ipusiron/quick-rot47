@@ -18,11 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let statusTimer = null;       // one timer, so a new message is never cleared by an older one
   let statusMessage = null;     // { key, values } of the message on screen, to translate it again
   let converted = null;         // { text, method, n } of the last conversion; the counts describe it
+  let lastShift = RotCore.normalizeShift(shiftInput.value);    // the ROT-N shift in use (1 to 25)
 
   const method = () => methodInputs.find(radio => radio.checked).value;
-  const shift = () => RotCore.normalizeShift(shiftInput.value);
+  const shift = () => lastShift;
   const nameOf = (m, n) => (m === 'rotn' ? 'ROT-' + n : m.toUpperCase());
-  const currentName = () => nameOf(method(), shift());
+  // The typed shift as a whole number, or null while the field is empty or holds something else
+  const typedShift = () => (/^\s*-?\d+\s*$/.test(shiftInput.value) ? Number(shiftInput.value) : null);
 
   function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -56,17 +58,29 @@ document.addEventListener('DOMContentLoaded', () => {
     renderMap();
   }
   methodInputs.forEach(radio => radio.addEventListener('change', onMethodChange));
+  // While typing, only 1 to 25 takes effect; other numbers are folded into 1..25 when the field is left,
+  // and an empty field or a non-number goes back to the shift in use
   shiftInput.addEventListener('input', () => {
-    if (shiftInput.value !== '') onMethodChange();
+    const typed = typedShift();
+    if (typed === null || typed < 1 || typed > 25 || typed === lastShift) return;
+    lastShift = typed;
+    onMethodChange();
   });
   shiftInput.addEventListener('change', () => {
-    shiftInput.value = shift();              // show the shift that is actually used (1 to 25)
-    onMethodChange();
+    const typed = typedShift();
+    const next = typed === null ? lastShift : RotCore.normalizeShift(typed);
+    shiftInput.value = next;
+    if (next !== lastShift) {
+      lastShift = next;
+      onMethodChange();
+    }
+    if (typed === null || typed !== next) showStatus('status.shiftFixed', { n: next });
   });
   $('rotn-invert').addEventListener('click', () => {
-    shiftInput.value = RotCore.inverseShift(shift());
+    lastShift = RotCore.inverseShift(lastShift);
+    shiftInput.value = lastShift;
     onMethodChange();
-    showStatus('status.inverted', { n: shift() });
+    showStatus('status.inverted', { n: lastShift });
   });
 
   // ---------- Conversion ----------
@@ -89,18 +103,30 @@ document.addEventListener('DOMContentLoaded', () => {
     renderStats();
   }
 
+  // The input changed: the table follows it, and an earlier guess no longer describes it
+  function inputChanged() {
+    renderMap();
+    if (guesses) {
+      guesses = { stale: true };
+      renderGuesses();
+    }
+  }
+
   $('convert-button').addEventListener('click', convert);
   input.addEventListener('input', () => {
     if (live.checked) convert();
-    renderMap();
+    inputChanged();
   });
   live.addEventListener('change', () => {
     if (live.checked) convert();
   });
   document.querySelectorAll('.sample-button').forEach(button => button.addEventListener('click', () => {
-    input.value = button.dataset.sample === 'plain' ? PLAIN_SAMPLE : RotCore.convert(PLAIN_SAMPLE, method(), shift());
+    // The hidden sample is made so that converting it with the chosen method gives the plain sample back
+    // (for ROT-N that is the text shifted by 26 - N)
+    const n = method() === 'rotn' ? RotCore.inverseShift(shift()) : shift();
+    input.value = button.dataset.sample === 'plain' ? PLAIN_SAMPLE : RotCore.convert(PLAIN_SAMPLE, method(), n);
     convert();
-    renderMap();
+    inputChanged();
   }));
 
   $('copy-button').addEventListener('click', async () => {
@@ -120,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!output.value) return showStatus('status.setNothing');
     input.value = output.value;
     convert();
-    renderMap();
+    inputChanged();
     const n = shift();
     if (RotCore.isSelfInverse(method(), n)) showStatus('status.set');
     else showStatus('status.setShifted', { n, back: RotCore.inverseShift(n) });
@@ -150,7 +176,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- Method guess ----------
   const detectList = $('detect-list');
   const detectStatus = $('detect-status');
-  let guesses = null;           // the last result, drawn again when the language changes
+  const WEAK_SCORE = 0.8;       // below this, even the best result hardly looks like English
+  const WEAK_MARGIN = 0.2;      // a lead smaller than this over the next different result is not reliable
+  let guesses = null;           // the last result ({ list } or { empty } or { stale }), drawn again when the language changes
 
   function candidateName(c) {
     if (c.method === 'none') return I18n.t('detect.none');
@@ -160,39 +188,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function useCandidate(c) {
     methodInputs.forEach(radio => { radio.checked = radio.value === c.method; });
-    if (c.method === 'rotn') shiftInput.value = c.n;
+    if (c.method === 'rotn') {
+      lastShift = c.n;
+      shiftInput.value = c.n;
+    }
     onMethodChange();
     convert();
     output.focus();
     showStatus('status.used', { name: nameOf(c.method, c.n) });
   }
 
+  function guessMessage(list) {
+    const best = list[0];
+    const tied = list.filter(c => c.tie && c.score === best.score);
+    const next = list.find(c => c.score < best.score);
+    const weak = best.score < WEAK_SCORE || (next !== undefined && best.score - next.score < WEAK_MARGIN);
+    const parts = [I18n.t('detect.result', { count: list.length, shown: Math.min(DETECT_SHOWN, list.length) })];
+    if (tied.length > 1) parts.push(I18n.t('detect.tieNote', { names: tied.map(candidateName).join(I18n.t('detect.nameSep')) }));
+    if (weak) parts.push(I18n.t('detect.weak'));
+    return { text: parts.join(' '), tied };
+  }
+
   function renderGuesses() {
     if (!guesses) return;
-    if (guesses.empty) {
-      detectStatus.textContent = I18n.t('detect.empty');
+    if (!guesses.list) {
+      detectStatus.textContent = I18n.t(guesses.empty ? 'detect.empty' : 'detect.stale');
       detectList.replaceChildren();
       return;
     }
-    const best = guesses.list[0];
-    detectStatus.textContent = best.score === 0 ? I18n.t('detect.noLetters') : I18n.t('detect.result', { count: guesses.list.length });
-    if (best.score === 0) return detectList.replaceChildren();
-    const top = best.score;
-    detectList.replaceChildren(...guesses.list.slice(0, DETECT_SHOWN).map((c, i) => {
-      const item = el('li', 'detect-item' + (i === 0 ? ' best' : ''));
+    const list = guesses.list;
+    const { text, tied } = guessMessage(list);
+    detectStatus.textContent = text;
+    // The bars compare the results with each other: the best one is full, the worst one is empty
+    const best = list[0].score;
+    const worst = list[list.length - 1].score;
+    const percent = c => (best === worst ? 100 : Math.round(((c.score - worst) / (best - worst)) * 100));
+    detectList.replaceChildren(...list.slice(0, DETECT_SHOWN).map((c, i) => {
+      const top = i === 0 || tied.includes(c);
+      const item = el('li', 'detect-item' + (top ? ' best' : ''));
       const head = el('div', 'detect-head');
       head.append(el('strong', 'detect-name', candidateName(c)));
       const meter = el('meter', 'detect-meter');
       meter.min = 0;
-      meter.max = top;
-      meter.value = c.score;
-      meter.setAttribute('aria-label', I18n.t('detect.meter', { percent: Math.round((c.score / top) * 100) }));
+      meter.max = 100;
+      meter.value = percent(c);
+      meter.setAttribute('aria-label', I18n.t('detect.meter', { percent: percent(c) }));
       head.append(meter);
-      if (i === 0) head.append(el('span', 'detect-badge', I18n.t('detect.best')));
-      const preview = c.text.length > PREVIEW_LENGTH ? c.text.slice(0, PREVIEW_LENGTH) + '…' : c.text;
+      if (top) head.append(el('span', 'detect-badge', I18n.t(tied.length > 1 ? 'detect.bestTie' : 'detect.best')));
+      const chars = Array.from(c.text);                  // by code point, so an emoji is never cut in half
+      const preview = chars.length > PREVIEW_LENGTH ? chars.slice(0, PREVIEW_LENGTH).join('') + '…' : c.text;
       item.append(head, el('p', 'detect-preview', preview));
       if (c.method !== 'none') {
-        const use = el('button', 'small-button', I18n.t('detect.use'));
+        const use = el('button', 'small-button', I18n.t('detect.use', { name: nameOf(c.method, c.n) }));
         use.type = 'button';
         use.addEventListener('click', () => useCandidate(c));
         item.append(use);
@@ -202,7 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   $('detect-button').addEventListener('click', () => {
-    guesses = input.value.trim() ? { list: RotCore.detect(input.value) } : { empty: true };
+    // Nothing to judge without half-width letters, digits or symbols (the methods change nothing else)
+    guesses = /[!-~]/.test(input.value) ? { list: RotCore.detect(input.value) } : { empty: true };
     renderGuesses();
   });
 
@@ -217,14 +265,21 @@ document.addEventListener('DOMContentLoaded', () => {
     helpModal.showModal();
   });
   $('help-close').addEventListener('click', () => helpModal.close());
+  // A click on the backdrop closes the dialog; a click inside it (including its padding) does not
   helpModal.addEventListener('click', event => {
-    if (event.target === helpModal) helpModal.close();
+    const r = helpModal.getBoundingClientRect();
+    const inside = event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom;
+    if (event.target === helpModal && !inside) helpModal.close();
   });
   helpModal.addEventListener('close', () => helpButton.focus());
 
   // ---------- Language ----------
-  $('lang-button').addEventListener('click', () => I18n.setLanguage(I18n.language === 'ja' ? 'en' : 'ja'));
+  // The button shows the other language's name ("English" / "日本語"), which is also its accessible name
+  const langButton = $('lang-button');
+  const markLangButton = () => { langButton.lang = I18n.language === 'ja' ? 'en' : 'ja'; };
+  langButton.addEventListener('click', () => I18n.setLanguage(I18n.language === 'ja' ? 'en' : 'ja'));
   document.addEventListener('languagechange', () => {
+    markLangButton();
     renderMethod();
     renderStats();
     renderMap();
@@ -232,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (statusMessage) status.textContent = I18n.t(statusMessage.key, statusMessage.values);
     if (helpModal.open) renderHelp();
   });
+  markLangButton();
   renderMethod();
   renderStats();
   renderMap();

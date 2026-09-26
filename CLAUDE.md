@@ -23,7 +23,8 @@ Classic scripts (no modules, so `file://` works), loaded in this order by `index
   - `convert(text, method, n)`, `rot47(text)`, `rotChar(ch)`, `normalizeShift(n)` (1-25; 0 and 26 become 13), `isSelfInverse(method, n)`, `inverseShift(n)` (26 - N)
   - `mapping(method, n)`: every changed character as `{ from, to, kind }` (`symbol`, `digit`, `upper`, `lower`)
   - `stats(text, method, n)`: `changed`, `kept`, `fullWidth`, counted per code point
-  - `detect(text)`: every distinct result of none/ROT47/ROT13/ROT5/ROT18/ROT-1..25, ranked by `englishScore()` (common words, letter-frequency chi-squared, odd symbols, `flag{...}`)
+  - `detect(text)`: every distinct result of none/ROT47/ROT13/ROT5/ROT18/ROT-1..25, ranked by `englishScore()`: common English and CTF words (`WORD_COUNT`; digits inside a word read as leetspeak), letter-frequency chi-squared, unusual symbols, and a flag shape (`XXX{...}`, more for known prefixes such as HTB or anything ending in CTF). Scores are not clamped; text without ASCII letters scores `NO_LETTERS`. `tie` marks results that differ only in digits and score the same (ROT13/ROT18, none/ROT5)
+  - The page calls a guess unreliable when the best score is below 0.8 or leads the next different result by less than 0.2 (`js/main.js`)
 - `js/main.js` - page behaviour: method choice, convert, live conversion, samples, copy (falls back to selecting the output), "use as input", status messages (one timer), character table, method guess, help dialog, language button
 
 Each file ends with `if (typeof module !== 'undefined' && module.exports) module.exports = ...` so Node can load it.

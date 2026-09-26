@@ -142,6 +142,7 @@ test('claims that did not hold up stay removed', () => {
 
 test('the method table and the guess examples match the core', () => {
   const rowsOf = (lang, heading) => section(readme[lang], heading).split('\n').filter(l => l.startsWith('|')).slice(2).map(cells);
+  for (const lang of ['ja', 'en']) assert.ok(readme[lang].includes(String(C.WORD_COUNT)), `${lang}: the word count`);
   for (const [lang, methods, guesses] of [['ja', '### 方式ごとの対象', '### 判定の例'], ['en', '### What each method changes', '### Examples of guesses']]) {
     const rows = rowsOf(lang, methods);
     assert.deepEqual(rows.map(r => r[0].replace(/\*/g, '')), ['ROT47', 'ROT13', 'ROT5', 'ROT18', 'ROT-N'], lang);
@@ -151,7 +152,8 @@ test('the method table and the guess examples match the core', () => {
     for (const [cipher, name, plain] of examples) {
       const best = C.detect(cipher)[0];
       assert.equal(best.text, plain, `${lang} ${plain}`);
-      assert.equal(best.method === 'rotn' ? 'ROT-' + best.n : best.method.toUpperCase(), name, `${lang} ${plain}`);
+      const expected = best.method === 'rotn' ? 'ROT-' + best.n : best.method.toUpperCase();
+      assert.ok(name === expected || name.startsWith(expected + ' ') || name.startsWith(expected + '（'), `${lang} ${plain}: ${name}`);
     }
   }
 });

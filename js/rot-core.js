@@ -31,7 +31,7 @@ const RotCore = (() => {
   }
 
   function plan(method, n) {
-    const def = METHODS[method];
+    const def = Object.hasOwn(METHODS, method) ? METHODS[method] : null;      // not 'toString' and the like
     if (!def) throw new Error('Unknown method: ' + method);
     return def.rings.map(([ring, shift]) => [RINGS[ring], shift === null ? normalizeShift(n) : shift]);
   }
@@ -46,7 +46,7 @@ const RotCore = (() => {
   // Iterates by code point, so characters outside the BMP (emoji) stay whole
   function convert(text, method = 'rot47', n = 13) {
     const steps = plan(method, n);
-    return Array.from(String(text || ''), ch => convertChar(ch, steps)).join('');
+    return Array.from(String(text ?? ''), ch => convertChar(ch, steps)).join('');
   }
   const rot47 = text => convert(text, 'rot47');
   const rotChar = ch => convertChar(ch, plan('rot47'));
@@ -77,15 +77,18 @@ const RotCore = (() => {
 
   // Full-width ASCII (U+FF01 to U+FF5E) looks like the targets but is not converted
   const isFullWidthAscii = ch => ch.codePointAt(0) >= 0xff01 && ch.codePointAt(0) <= 0xff5e;
+  const HALF_WIDTH_OFFSET = 0xfee0;         // U+FF21 (full-width A) - U+0041 (A)
 
-  // How many characters the method converts and how many it leaves as they are
+  // How many characters the method converts and how many it leaves as they are.
+  // fullWidth counts the full-width characters whose half-width twin this method would convert.
   function stats(text, method = 'rot47', n = 13) {
     const steps = plan(method, n);
+    const inPlan = code => steps.some(([ring]) => inRing(code, ring));
     const result = { changed: 0, kept: 0, fullWidth: 0 };
-    for (const ch of String(text || '')) {
-      if (steps.some(([ring]) => inRing(ch.codePointAt(0), ring))) result.changed++;
+    for (const ch of String(text ?? '')) {
+      if (inPlan(ch.codePointAt(0))) result.changed++;
       else result.kept++;
-      if (isFullWidthAscii(ch)) result.fullWidth++;
+      if (isFullWidthAscii(ch) && inPlan(ch.codePointAt(0) - HALF_WIDTH_OFFSET)) result.fullWidth++;
     }
     return result;
   }
@@ -99,16 +102,28 @@ const RotCore = (() => {
     ' into year your good some could them see other than then now look only come its over think also back after use two how our work first' +
     ' well way even new want because any these give day most us is are was were has had been am did does said hello world flag ctf secret' +
     ' answer message key text code cipher meet noon attack dawn quick brown fox jumps lazy dog test yes thank thanks please here where why' +
-    ' password user admin login pico welcome').split(' '));
-  // Sentence punctuation is usual in English; other symbols (and digits in the middle of words) are not
+    ' password user admin login pico welcome rot crypto hack hacker easy fun love').split(' '));
+  const WORD_COUNT = WORDS.size;
+  // Sentence punctuation is usual in English; other symbols are not
   const USUAL = new Set(' .,!?\'"-:;()\n\t'.split(''));
+  // A CTF flag: a prefix of letters, digits or _ and a body in braces (flag{...}, HTB{...}, picoCTF{...})
+  const FLAG = /([A-Za-z0-9_]{2,16})\{[!-|~]{2,}\}/;
+  // Prefixes of well-known flag formats (the ones ending in CTF, such as DUCTF, count too)
+  const KNOWN_PREFIX = /^(?:flag|picoctf|htb|thm|seccon|ctf4b|\w*ctf)$/i;
+  // Digits that stand for letters in leetspeak (w3lc0m3 = welcome), read only inside runs that contain a letter
+  const LEET = { 0: 'o', 1: 'l', 3: 'e', 4: 'a', 5: 's', 7: 't' };
+  // The score of a text with no ASCII letters: below every text that has some
+  const NO_LETTERS = -10;
 
-  // Higher is more like English. Returns 0 for text with no ASCII letters.
+  // Higher is more like English. Can be negative (many unusual symbols); NO_LETTERS without ASCII letters.
   function englishScore(text) {
-    const s = String(text || '');
+    const s = String(text ?? '');
     const letters = s.match(/[A-Za-z]/g) || [];
-    if (!letters.length) return 0;
-    const ascii = [...s].filter(ch => ch.codePointAt(0) < 128);
+    if (!letters.length) return NO_LETTERS;
+    const flag = FLAG.exec(s);
+    // Braces and underscores belong to a flag, so they are not counted as unusual symbols
+    const body = flag ? s.slice(0, flag.index) + flag[0].replace(/[{}_]/g, ' ') + s.slice(flag.index + flag[0].length) : s;
+    const ascii = [...body].filter(ch => ch.codePointAt(0) < 128);
     const odd = ascii.filter(ch => !/[A-Za-z0-9]/.test(ch) && !USUAL.has(ch)).length;
     const oddRatio = odd / Math.max(1, ascii.length);
     const counts = new Array(26).fill(0);
@@ -116,16 +131,19 @@ const RotCore = (() => {
     let chi = 0;
     FREQ.forEach((f, i) => { const expected = f / 100 * letters.length; chi += (counts[i] - expected) ** 2 / expected; });
     const chiScore = 1 / (1 + chi / letters.length);           // 1 for a perfect match, towards 0 for random
-    const tokens = s.toLowerCase().match(/[a-z]+/g) || [];
+    // Words: runs of letters and digits that contain a letter, with leetspeak digits read as letters
+    const tokens = (body.toLowerCase().match(/[a-z0-9]*[a-z][a-z0-9]*/g) || []).map(w => w.replace(/[013457]/g, d => LEET[d]));
     const known = tokens.filter(w => WORDS.has(w)).reduce((sum, w) => sum + w.length, 0);
     const wordScore = known / Math.max(1, tokens.reduce((sum, w) => sum + w.length, 0));
-    const flag = /\b(?:flag|ctf|picoctf)\{[^}]*\}/i.test(s) ? 1 : 0;
-    return Math.max(0, 2 * wordScore + chiScore - 2 * oddRatio + flag);
+    const flagBonus = flag ? (KNOWN_PREFIX.test(flag[1]) ? 2 : 1) : 0;
+    return 2 * wordScore + chiScore - 2 * oddRatio + flagBonus;
   }
 
-  // Candidates, best first: [{ method, n, text, score }]. 'none' is the text as it is.
+  // Candidates, best first: [{ method, n, text, score, tie }]. 'none' is the text as it is.
+  // tie: another candidate has the same score and differs only in digits (ROT13 and ROT18, none and ROT5),
+  // so the score cannot tell them apart.
   function detect(text) {
-    const s = String(text || '');
+    const s = String(text ?? '');
     const candidates = [{ method: 'none', n: 0, text: s }];
     for (const method of ['rot47', 'rot13', 'rot5', 'rot18']) candidates.push({ method, n: 0, text: convert(s, method) });
     for (let n = 1; n < 26; n++) if (n !== 13) candidates.push({ method: 'rotn', n, text: convert(s, 'rotn', n) });
@@ -134,12 +152,14 @@ const RotCore = (() => {
     const seen = new Set();
     const unique = candidates.filter(c => !seen.has(c.text) && seen.add(c.text));
     // The sort is stable, so on a tie the simpler method stays first
-    return unique.map(c => ({ ...c, score: englishScore(c.text) })).sort((a, b) => b.score - a.score);
+    const ranked = unique.map(c => ({ ...c, score: englishScore(c.text) })).sort((a, b) => b.score - a.score);
+    const withoutDigits = ranked.map(c => c.text.replace(/[0-9]/g, '#'));
+    return ranked.map((c, i) => ({ ...c, tie: ranked.some((d, j) => j !== i && d.score === c.score && withoutDigits[j] === withoutDigits[i]) }));
   }
 
   return {
     FIRST, LAST, SIZE, SHIFT, METHOD_IDS, isTarget, rotChar, rot47, convert, normalizeShift, isSelfInverse, inverseShift,
-    mapping, kindOf, isFullWidthAscii, stats, englishScore, detect
+    mapping, kindOf, isFullWidthAscii, stats, englishScore, detect, WORD_COUNT, NO_LETTERS
   };
 })();
 

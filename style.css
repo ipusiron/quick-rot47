@@ -106,6 +106,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   color: var(--text);
 }
 .method-note { margin: 0.5rem 0 0; color: var(--muted); font-size: 0.9rem; }
+.rotn-controls .small-button { white-space: nowrap; }     /* keeps (26 - N) on one line */
 .small-button {
   min-height: 44px;
   padding: 0 0.9rem;
@@ -200,7 +201,11 @@ textarea {
 .detect-item { margin: 0 0 0.6rem; padding: 0.7rem 0.9rem; border: 1px solid #94a3b8; border-radius: 8px; }
 .detect-item.best { border: 2px solid var(--ok); }
 .detect-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.8rem; }
-.detect-meter { width: 8rem; height: 0.9rem; }
+/* A visible track (4.76:1) and fill (5.14:1), so the length of the bar can be read against the full scale */
+.detect-meter { width: 8rem; height: 0.9rem; border: 1px solid #64748b; border-radius: 4px; background: #ffffff; }
+.detect-meter::-webkit-meter-bar { border: none; border-radius: 3px; background: #ffffff; }
+.detect-meter::-webkit-meter-optimum-value { background: var(--ok); }
+.detect-meter::-moz-meter-bar { background: var(--ok); }
 .detect-badge { padding: 0 0.5rem; border-radius: 6px; background: var(--ok); color: #ffffff; font-size: 0.85rem; font-weight: 700; }
 .detect-preview {
   margin: 0.4rem 0;

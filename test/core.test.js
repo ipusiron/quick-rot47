@@ -81,6 +81,11 @@ test('statistics count converted and kept characters for each method, and full-w
   assert.deepEqual(R.stats('Hello World! 123', 'rot13'), { changed: 10, kept: 6, fullWidth: 0 });
   assert.deepEqual(R.stats('Hello World! 123', 'rot5'), { changed: 3, kept: 13, fullWidth: 0 });
   assert.deepEqual(R.stats('ＡＢＣ abc'), { changed: 3, kept: 4, fullWidth: 3 });
+  // Full-width characters count only when their half-width twin is something the method converts
+  assert.equal(R.stats('Ａ１！', 'rot47').fullWidth, 3);
+  assert.equal(R.stats('Ａ１！', 'rot13').fullWidth, 1);
+  assert.equal(R.stats('Ａ１！', 'rot5').fullWidth, 1);
+  assert.equal(R.stats('Ａ１！', 'rot18').fullWidth, 2);
   assert.deepEqual(R.stats('😀'), { changed: 0, kept: 1, fullWidth: 0 }, 'counted by code point');
   assert.ok(R.isFullWidthAscii('！') && R.isFullWidthAscii('～') && !R.isFullWidthAscii('　'));
 });
@@ -106,6 +111,39 @@ test('detection lists each distinct result once, simpler methods first on a tie'
   assert.equal(new Set(texts).size, texts.length, 'no duplicates');
   assert.ok(!list.some(c => c.method === 'rot18'), 'ROT18 without digits is the same as ROT13');
   assert.equal(R.detect('Hello World! 123')[0].method, 'none', 'plain text stays first even though ROT5 only changes the digits');
-  assert.deepEqual(R.detect(''), [{ method: 'none', n: 0, text: '', score: 0 }]);
-  assert.equal(R.englishScore('日本語だけ'), 0);
+  assert.deepEqual(R.detect(''), [{ method: 'none', n: 0, text: '', score: R.NO_LETTERS, tie: false }]);
+  assert.equal(R.englishScore('日本語だけ'), R.NO_LETTERS);
+  assert.ok(R.englishScore('{}<>[]|~ abc') < 0, 'scores are not clamped, so many symbols can go below zero');
+});
+
+test('CTF flags: known prefixes, leetspeak and braces', () => {
+  const cases = [['rot13', 0, 'HTB{w3lc0m3_t0_th3_j0urn3y}'], ['rot47', 0, 'THM{1_l0v3_r0t}'], ['rotn', 7, 'DUCTF{r0t_47_ftw}'],
+    ['rot47', 0, 'HTB{w3lc0m3_t0_th3_j0urn3y}'], ['rotn', 3, 'cpctf{rotation}'], ['none', 0, 'KCSC{r0t_47_1s_fun}']];
+  for (const [method, n, plain] of cases) {
+    const cipher = method === 'none' ? plain : R.convert(plain, method, n);
+    assert.equal(R.detect(cipher)[0].text, plain, `${method} ${plain}`);
+  }
+  assert.ok(R.englishScore('w3lc0m3 t0 th3 j0urn3y') > R.englishScore('j3yp0z3 g0 gu3 w0hea3l'), 'leetspeak is read as words');
+  assert.ok(R.englishScore('HTB{abc}') > R.englishScore('UGO{nop}'), 'a known flag prefix counts');
+});
+
+test('results that differ only in digits are marked as a tie', () => {
+  // Digits that stand alone say nothing about English, so ROT13 and ROT18 score the same
+  const list = R.detect(R.convert('Meet at 8 in room 29', 'rot18'));
+  const top = list.filter(c => c.score === list[0].score);
+  assert.deepEqual(top.map(c => c.method).sort(), ['rot13', 'rot18']);
+  assert.ok(top.every(c => c.tie));
+  assert.ok(top.some(c => c.text === 'Meet at 8 in room 29'));
+  // Digits inside words are read as leetspeak, which settles it (s3cr3t = secret)
+  const flag = R.detect(R.convert('picoCTF{s3cr3t_fl4g}', 'rot18'))[0];
+  assert.deepEqual([flag.method, flag.text, flag.tie], ['rot18', 'picoCTF{s3cr3t_fl4g}', false]);
+  assert.ok(!R.detect(R.convert('Meet me at noon', 'rot47'))[0].tie, 'no digits, no tie');
+});
+
+test('inputs the functions should not trip over', () => {
+  const lone = String.fromCharCode(0xd800);
+  assert.equal(R.convert(0, 'rot5'), '5', 'the number 0 is text, not empty');
+  assert.throws(() => R.convert('a', 'toString'), /Unknown method/, 'inherited names are not methods');
+  assert.equal(R.rot47(lone + 'A'), lone + 'p', 'a lone surrogate is left as it is');
+  assert.ok(R.WORD_COUNT > 100);
 });
