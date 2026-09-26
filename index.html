@@ -2,49 +2,73 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>QuickROT47 - ROT47変換ツール</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>QuickROT47 - ROT47変換ツール</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%90%3C/text%3E%3C/svg%3E">
 </head>
 <body>
-  <div class="container">
-    <h1>🔐 QuickROT47</h1>
-    <p class="subtitle">ASCII可視文字を47文字シフトするROT47変換ツール</p>
-
-    <div class="input-area">
-      <div class="input-header">
-        <label for="inputText">入力テキスト</label>
-        <button class="sample-btn" onclick="setSampleText()">サンプル: Hello World! 123</button>
-      </div>
-      <textarea id="inputText" rows="6" placeholder="ここに平文または暗号文を入力..."></textarea>
+  <header class="site-header">
+    <div class="header-side"></div>
+    <div class="header-title">
+      <h1>🔐 QuickROT47</h1>
+      <p data-i18n="app.subtitle">ASCII可視文字を47文字ずらすROT47変換ツール</p>
     </div>
-
-    <div class="button-area">
-      <button onclick="convertText()">変換する</button>
+    <div class="header-side header-actions">
+      <button type="button" id="lang-button" class="header-button" data-i18n="app.langButton" data-i18n-aria-label="app.langLabel">English</button>
+      <button type="button" id="help-button" class="header-button" data-i18n-aria-label="help.open" data-i18n-title="help.open">?</button>
     </div>
+  </header>
 
-    <div class="output-area">
-      <label for="outputText">出力テキスト</label>
-      <div class="output-wrapper">
-        <textarea id="outputText" rows="6" readonly></textarea>
-        <div class="copy-btn-container">
-          <button class="copy-btn" onclick="copyResult()">コピー</button>
-          <button class="set-input-btn" onclick="setToInput()">入力テキストにセット</button>
-          <div class="toast" id="toast">クリップボードにコピーしました</div>
+  <noscript><p class="noscript">このツールは JavaScript を使います。 / This tool requires JavaScript.</p></noscript>
+
+  <main class="container">
+    <section class="input-area">
+      <div class="area-header">
+        <label for="input-text" data-i18n="input.label">入力テキスト</label>
+        <div class="sample-buttons">
+          <button type="button" class="sample-button" data-sample="plain" data-i18n="sample.plain">サンプル: Hello World! 123</button>
+          <button type="button" class="sample-button" data-sample="cipher" data-i18n="sample.cipher">サンプル: 暗号文</button>
         </div>
       </div>
-    </div>
-  </div>
+      <textarea id="input-text" rows="6" spellcheck="false" autocomplete="off" data-i18n-placeholder="input.placeholder"></textarea>
+    </section>
 
-  <footer>
-    <div class="footer">
-      🔗 GitHubリポジトリはこちら（ 
-      <a href="https://github.com/ipusiron/quick-rot47" target="_blank">
-        ipusiron/quick-rot47
-      </a> ）
+    <div class="convert-area">
+      <button type="button" id="convert-button" class="convert-button" data-i18n="convert">🔁 変換する</button>
+      <label class="live-option"><input type="checkbox" id="live-convert"> <span data-i18n="live.label">入力に合わせて変換する</span></label>
     </div>
+
+    <section class="output-area">
+      <label for="output-text" data-i18n="output.label">出力テキスト</label>
+      <textarea id="output-text" rows="6" readonly spellcheck="false"></textarea>
+      <p class="stats" id="stats"></p>
+      <p class="stats warn" id="fullwidth-note" hidden></p>
+      <div class="output-actions">
+        <button type="button" id="copy-button" class="action-button copy" data-i18n="copy">📋 コピー</button>
+        <button type="button" id="set-input-button" class="action-button set" data-i18n="setInput">⬆ 入力テキストにセット</button>
+      </div>
+      <p class="status" id="status" role="status"></p>
+    </section>
+  </main>
+
+  <dialog id="help-modal" class="modal" aria-labelledby="help-title">
+    <div class="modal-header">
+      <h2 id="help-title" data-i18n="help.title">📖 ヘルプ</h2>
+      <button type="button" id="help-close" class="modal-close" data-i18n-aria-label="help.close">&times;</button>
+    </div>
+    <div class="modal-body" id="help-body"></div>
+  </dialog>
+
+  <footer class="footer">
+    <span data-i18n="app.footer">🔗 GitHubリポジトリーはこちら（</span><a href="https://github.com/ipusiron/quick-rot47"
+      target="_blank" rel="noopener noreferrer">ipusiron/quick-rot47</a><span data-i18n="app.footerEnd">）</span>
   </footer>
 
-  <script src="script.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/rot-core.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
