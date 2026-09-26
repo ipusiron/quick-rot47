@@ -121,12 +121,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (live.checked) convert();
   });
   document.querySelectorAll('.sample-button').forEach(button => button.addEventListener('click', () => {
-    // The hidden sample is made so that converting it with the chosen method gives the plain sample back
-    // (for ROT-N that is the text shifted by 26 - N)
-    const n = method() === 'rotn' ? RotCore.inverseShift(shift()) : shift();
-    input.value = button.dataset.sample === 'plain' ? PLAIN_SAMPLE : RotCore.convert(PLAIN_SAMPLE, method(), n);
+    input.value = button.dataset.sample === 'plain' ? PLAIN_SAMPLE : RotCore.convert(PLAIN_SAMPLE, method(), shift());
     convert();
     inputChanged();
+    // ROT-N does not undo itself, so converting its sample shifts it again: say how to get the plain text back
+    if (button.dataset.sample === 'cipher' && !RotCore.isSelfInverse(method(), shift())) {
+      showStatus('status.sampleShifted', { n: shift(), back: RotCore.inverseShift(shift()) });
+    }
   }));
 
   $('copy-button').addEventListener('click', async () => {

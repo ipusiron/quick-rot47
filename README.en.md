@@ -464,7 +464,7 @@ quick-rot47/
 | **Method** | ROT47, ROT13, ROT5, ROT18 or ROT-N. Choosing another method converts the input again with it |
 | **Shift (N)** | Shown for ROT-N only. A whole number from 1 to 25. Other whole numbers become their remainder modulo 26 (13 if that is 0); an empty field or anything else goes back to the previous shift |
 | **Switch to the undo shift** | Changes N to the shift that undoes ROT-N (26 − N) |
-| **Input text** | A multi-line input. The sample buttons fill in plain text, or text that the chosen method turns back into the plain text |
+| **Input text** | A multi-line input. The sample buttons fill in plain text, or the text converted with the chosen method (for ROT-N, the page says how to get the plain text back) |
 | **Convert** | Converts the input with the chosen method and puts the result in the output |
 | **Convert as I type** | When on, the output follows the input as you type |
 | **Output text** | The result (read-only). Below it, the counts of converted characters and characters left as they are |
