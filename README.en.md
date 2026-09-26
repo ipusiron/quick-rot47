@@ -13,6 +13,7 @@ English · [日本語](README.md)
 **QuickROT47** is a simple web tool for trying ROT47, which rotates each printable ASCII character (codes 33-126) by 47 places, wrapping around after `~`.
 
 One button takes you from plain text to ROT47 text and back. You can see for yourself that applying the same conversion twice gives the original text.
+You can also switch to ROT13, ROT5, ROT18 or ROT-N, see the character table of each method, and let the tool guess how a text was hidden.
 ROT47 has no key and provides no real security. This tool is made for learning how it works.
 
 ---
@@ -25,23 +26,34 @@ ROT47 has no key and provides no real security. This tool is made for learning h
 
 ## 📸 Screenshots
 
-> !["Hello World! 123" converted with ROT47, with the counts of converted and unchanged characters shown below the output](assets/en/screenshot.png)
->
-> *"Hello World! 123" converted with ROT47*
-
 > ![Text with full-width letters and digits, and the note that full-width characters are not converted](assets/screenshot2.png)
 >
 > *Full-width letters and digits are not converted, so the page shows a note (Japanese UI)*
+
+> ![ROT-3 applied to "Attack at dawn", with the note that applying ROT-3 again does not undo it](assets/en/screenshot.png)
+>
+> *ROT-N: the page tells you which shift undoes it*
+
+> ![A sentence hidden with ROT47 is guessed, and ROT47 is ranked first with the original sentence](assets/en/screenshot2.png)
+>
+> *Guessing: ROT47 is ranked first for a sentence hidden with ROT47*
+
+> ![The ROT47 table: the 94 characters colored by kind, with the characters of the input outlined](assets/screenshot3.png)
+>
+> *The character table: characters in the input are outlined (Japanese UI)*
 
 ---
 
 ## 🚀 Features
 
 - ✅ Converts text with ROT47 in one click (converting the result again gives the original back)
+- ✅ Switches to ROT13, ROT5, ROT18 or ROT-N (for ROT-N, "Switch to the undo shift" gives the shift that undoes it)
+- ✅ A character table shows every character the method changes and what it becomes (characters in the input are outlined)
+- ✅ Guesses which method hid a text, by how much each result looks like English
 - ✅ With "Convert as I type" on, the output follows the input as you type
-- ✅ Two samples: plain text and ROT47 text
+- ✅ Two samples: plain text, and text hidden with the chosen method
 - ✅ Shows how many characters were converted and how many were left as they are (spaces, line breaks, non-ASCII text and so on)
-- ✅ Tells you when full-width letters, digits or symbols are mixed in, because ROT47 does not convert them
+- ✅ Tells you when full-width letters, digits or symbols are mixed in, because no method converts them
 - ✅ Copies the output (if the page cannot copy, it selects the output and tells you how to copy it by hand)
 - ✅ Moves the output into the input and converts it again in one click
 - ✅ Japanese and English UI (button at the top of the page)
@@ -51,10 +63,12 @@ ROT47 has no key and provides no real security. This tool is made for learning h
 
 ## 🧭 How to Use
 
-1. Type text into the input (or use a sample button)
-2. Press "Convert"
-3. Copy the output. "Use as input" moves the output into the input and converts it again (the output goes back to the original text)
+1. Choose a method (ROT47 when the page opens)
+2. Type text into the input (or use a sample button)
+3. Press "Convert"
+4. Copy the output. "Use as input" moves the output into the input and converts it again (with a method that undoes itself, the output goes back to the original text)
 
+If you do not know how a text was hidden, type it into the input and press "Guess" under "Guess the method". The candidates are listed most English-like first.
 The "?" button at the top of the page opens the help dialog.
 
 ---
@@ -87,6 +101,72 @@ The following uses only change how the data looks. They do not protect it.
 - Covering debug information with ROT47 is not protection. Remove it before release (CWE-215, CWE-532).
 
 ROT47 is useful only as a thin veil, for example to keep a spoiler from being read by accident.
+
+---
+
+## 🔀 Methods and the Character Table
+
+### What each method changes
+
+"Method" above the input switches between five methods:
+
+| Method | Characters | Count | Shift | Applying it again |
+| --- | --- | --- | --- | --- |
+| **ROT47** | Printable ASCII (`!` to `~`) | 94 | 47 | Restores the text |
+| **ROT13** | Letters | 52 | 13 | Restores the text |
+| **ROT5** | Digits | 10 | 5 | Restores the text |
+| **ROT18** | Letters and digits | 62 | 13 for letters, 5 for digits | Restores the text |
+| **ROT-N** | Letters | 52 | N (1 to 25) | Restores the text only when N = 13; undo with 26 − N |
+
+ROT47, ROT13, ROT5 and ROT18 each turn their ring of characters exactly halfway, so applying them again restores the text.
+ROT-N shifts letters by N (the Caesar cipher). Unless N is 13, applying it again does not undo it. "Switch to the undo shift" changes N to 26 − N.
+
+### Reading the character table
+
+The table lists every character the chosen method changes, as "character → result".
+The color of a cell shows the kind of the original character (symbol, digit, uppercase or lowercase letter), and characters in the input are outlined. You can see at a glance that ROT47 turns letters into symbols and digits too, while ROT13 swaps letters with letters.
+
+---
+
+## 🔎 How the Guess Works
+
+### Measuring how English a text looks
+
+"Guess" converts the input in each of these ways and compares the results:
+
+- As it is (no conversion)
+- ROT47, ROT13, ROT5 and ROT18
+- ROT-1 to ROT-25 (ROT-13 is left out because it is ROT13)
+
+Methods that give the same result count once (for example, ROT18 on text without digits is ROT13).
+Each result gets an English-likeness score from the following, and up to five are shown, highest first:
+
+- The share of letters that belong to common English and CTF words (153 words, such as the, and and flag). Digits inside a word are read as leetspeak (`w3lc0m3` is `welcome`)
+- How close the letter frequencies are to average English (a chi-squared value)
+- The share of symbols that rarely appear in English (more lowers the score)
+- The shape of a CTF flag such as `flag{…}`, `HTB{…}` or `picoCTF{…}` (raises the score, more for a well-known prefix; `{`, `}` and `_` inside the flag are not counted as symbols)
+
+When the best score is low, or the lead over the next result is small, the page says that the guess is not reliable.
+
+### Examples of guesses
+
+The tests check these examples every time:
+
+| Input (hidden text) | Ranked first | Text given back |
+| --- | --- | --- |
+| `` %96 BF:4< 3C@H? 7@I ;F>AD @G6C E96 =2KJ 5@8 `` | ROT47 | `` The quick brown fox jumps over the lazy dog `` |
+| `` Zrrg zr ng abba ol gur byq oevqtr `` | ROT13 | `` Meet me at noon by the old bridge `` |
+| `` Dwwdfn dw gdzq `` | ROT-23 (undoes ROT-3) | `` Attack at dawn `` |
+| `` A:4@r%uLC_Ecf0`D0?_E04CJAE_N `` | ROT47 | `` picoCTF{r0t47_1s_n0t_crypt0} `` |
+| `` UGO{j3yp0z3_g0_gu3_w0hea3l} `` | ROT13 | `` HTB{w3lc0m3_t0_th3_j0urn3y} `` |
+
+### Limits
+
+- It assumes English text, so it can be wrong for non-English text or text of only a few words
+- Text without half-width letters, digits or symbols is not judged. Text of only digits or symbols is judged, because ROT47 turns it into letters, but the result is often meaningless
+- Results that differ only in digits, such as ROT13 and ROT18 or no conversion and ROT5, get the same score unless the digits are part of words (leetspeak). Both are then marked as tied
+- Text that is not English prose (program code, for example) can look less English than one of its rotations
+- It cannot recognize text hidden with several methods in a row, or with methods other than ROT (such as Base64)
 
 ---
 
@@ -149,7 +229,7 @@ w6==@ (@C=5P
 
 ### Full-width and Japanese text
 
-Full-width letters, digits and symbols (such as "Ａ", "１" and "！") are different characters from ASCII. ROT47 does not convert them.
+Full-width letters, digits and symbols (such as "Ａ", "１" and "！") are different characters from ASCII. None of the methods converts them.
 Japanese characters and emoji are not converted either.
 
 When full-width letters, digits or symbols are mixed into the input, the tool shows a note with how many there are.
@@ -305,7 +385,7 @@ Because it also rotates digits and symbols, its output is harder to read at a gl
 2. **ROT-N (variable)**
    - The user chooses the shift
    - The same idea as the Caesar cipher
-   - The shift can be seen as a key, but for letters there are only 25 choices, so trying them all breaks it at once
+   - The shift can be seen as a key, but for letters there are only 25 choices, so trying them all breaks it at once (the guess in this tool tries all 25)
 
 3. **ROT13/47**
    - ROT13 on Latin letters and ROT47 on JIS kanji (see "Origin of the name")
@@ -340,34 +420,37 @@ Because it also rotates digits and symbols, its output is harder to read at a gl
 
 ```
 quick-rot47/
-├── .github/                # GitHub settings
-│   └── workflows/          # GitHub Actions workflows
-│       └── test.yml        # Runs npm test on push and pull_request
-├── assets/                 # Images
-│   ├── en/                 # Screenshots of the English UI
-│   │   └── screenshot.png  # The sample converted in the English UI
-│   ├── screenshot.png      # The sample converted in the Japanese UI
-│   └── screenshot2.png     # Text with full-width letters and digits, and the note
-├── js/                     # Scripts (classic scripts)
-│   ├── i18n.js             # Japanese and English messages, language switching
-│   ├── main.js             # Conversion, samples, copying and help on the page
-│   └── rot-core.js         # ROT47 and the character counts (no DOM)
-├── test/                   # Automated tests (node --test)
-│   ├── contrast.test.js    # Color contrast ratios
-│   ├── core.test.js        # Worked-out examples, self-inverse property and counts
-│   ├── format.test.js      # Line lengths, control characters and line counts
-│   ├── html.test.js        # CSP, ARIA and patterns the scripts must not use
-│   ├── i18n.test.js        # Japanese and English messages
-│   └── readme.test.js      # README examples, structure and images
-├── .gitignore              # Files ignored by Git
-├── .nojekyll               # Disables Jekyll on GitHub Pages
-├── CLAUDE.md               # Notes for Claude Code (English)
-├── LICENSE                 # MIT license
-├── README.en.md            # English README
-├── README.md               # Japanese README
-├── index.html              # The page
-├── package.json            # npm test configuration (no dependencies)
-└── style.css               # Page styles (colors in :root variables)
+├── .github/                 # GitHub settings
+│   └── workflows/           # GitHub Actions workflows
+│       └── test.yml         # Runs npm test on push and pull_request
+├── assets/                  # Images
+│   ├── en/                  # Screenshots of the English UI
+│   │   ├── screenshot.png   # ROT-3 applied to a sentence
+│   │   └── screenshot2.png  # The guess ranks ROT47 first
+│   ├── screenshot.png       # The sample converted with ROT47 (Japanese UI)
+│   ├── screenshot2.png      # Text with full-width letters and digits, and the note (Japanese UI)
+│   ├── screenshot3.png      # The ROT47 table with the input characters outlined (Japanese UI)
+│   └── screenshot4.png      # Guess results (Japanese UI)
+├── js/                      # Scripts (classic scripts)
+│   ├── i18n.js              # Japanese and English messages, language switching
+│   ├── main.js              # Method choice, conversion, copying, table, guessing and help on the page
+│   └── rot-core.js          # The five methods, tables, counts and guessing (no DOM)
+├── test/                    # Automated tests (node --test)
+│   ├── contrast.test.js     # Color contrast ratios
+│   ├── core.test.js         # Examples for each method, self-inverse property, tables, counts and guessing
+│   ├── format.test.js       # Line lengths, control characters and line counts
+│   ├── html.test.js         # CSP, ARIA and patterns the scripts must not use
+│   ├── i18n.test.js         # Japanese and English messages
+│   └── readme.test.js       # README tables, structure and images
+├── .gitignore               # Files ignored by Git
+├── .nojekyll                # Disables Jekyll on GitHub Pages
+├── CLAUDE.md                # Notes for Claude Code (English)
+├── LICENSE                  # MIT license
+├── README.en.md             # English README
+├── README.md                # Japanese README
+├── index.html               # The page
+├── package.json             # npm test configuration (no dependencies)
+└── style.css                # Page styles (colors in :root variables)
 ```
 
 ---
@@ -378,14 +461,19 @@ quick-rot47/
 
 | Element | Description |
 |---------|-------------|
-| **Input text** | A multi-line input. The sample buttons fill in plain text or ROT47 text |
-| **Convert** | Converts the input with ROT47 and puts the result in the output |
+| **Method** | ROT47, ROT13, ROT5, ROT18 or ROT-N. Choosing another method converts the input again with it |
+| **Shift (N)** | Shown for ROT-N only. A whole number from 1 to 25. Other whole numbers become their remainder modulo 26 (13 if that is 0); an empty field or anything else goes back to the previous shift |
+| **Switch to the undo shift** | Changes N to the shift that undoes ROT-N (26 − N) |
+| **Input text** | A multi-line input. The sample buttons fill in plain text, or the text converted with the chosen method (for ROT-N, the page says how to get the plain text back) |
+| **Convert** | Converts the input with the chosen method and puts the result in the output |
 | **Convert as I type** | When on, the output follows the input as you type |
 | **Output text** | The result (read-only). Below it, the counts of converted characters and characters left as they are |
 | **Copy** | Copies the output to the clipboard. If the page cannot copy, it selects the output and tells you how to copy it by hand |
-| **Use as input** | Moves the output into the input and converts it again at once (the output goes back to the original text) |
+| **Use as input** | Moves the output into the input and converts it again at once. With a method that undoes itself, the output goes back to the original text; ROT-N (N ≠ 13) shifts it by N once more |
+| **Character table** | Lists every character the chosen method changes, colored by the kind of the original character, with the characters in the input outlined |
+| **Guess the method** | Shows up to five results, most English-like first. "Convert with (method)" chooses that method and converts. Ties and unreliable guesses are pointed out. Changing the input clears the results |
 | **Status** | Shows the result of an action for 4 seconds (also read out by screen readers) |
-| **Help (?)** | Explains how ROT47 works, how to use the tool and what to watch out for |
+| **Help (?)** | Explains ROT47 and its relatives, how to use the tool, the guess and what to watch out for |
 | **Language button** | Switches between Japanese and English. The choice is saved in the browser |
 
 ### Technology
@@ -414,6 +502,10 @@ quick-rot47/
 | Secondary text (subtitle, counts, footer) | `#4b5563` (`--muted`) |
 | Warning text (full-width note) | `#854d0e` (`--warn-text`) |
 | Keyboard focus outline | `#005fa3` (`--focus`) |
+| Table cells for symbols (background) | `#fde68a` (`--kind-symbol`) |
+| Table cells for digits (background) | `#bbf7d0` (`--kind-digit`) |
+| Table cells for uppercase letters (background) | `#bfdbfe` (`--kind-upper`) |
+| Table cells for lowercase letters (background) | `#e9d5ff` (`--kind-lower`) |
 
 Every text color has a contrast ratio of at least 4.5:1 against its background (checked by `test/contrast.test.js`).
 
@@ -427,12 +519,14 @@ npm test
 
 The tests check the following. GitHub Actions runs them on every push and pull request.
 
-- ROT47 results match examples worked out by hand
-- The mapping of the 94 characters is self-inverse
+- The results of each method match examples worked out by hand
+- ROT47, ROT13, ROT5 and ROT18 are self-inverse, and ROT-(26 − N) undoes ROT-N
+- The character table contains every character the method changes
+- The guess ranks the original first for English hidden with ROT47, ROT13 and ROT-3, and for plain English
 - The Japanese and English messages have the same keys
 - The CSP stays strict, and the scripts use no `innerHTML`, inline scripts and the like
 - The color contrast ratios
-- The examples, pair table and worked example in the READMEs match the core
+- The examples, pair table, worked example, method table and guess examples in the READMEs match the core
 
 ---
 

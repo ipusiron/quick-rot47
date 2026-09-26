@@ -19,19 +19,21 @@ const vars = {};
 for (const [, name, value] of /:root\s*\{([^}]*)\}/.exec(css)[1].matchAll(/--([a-z-]+):\s*(#[0-9a-fA-F]{3,6})/g)) vars[name] = value;
 
 test('text colors meet 4.5:1 on their backgrounds', () => {
-  assert.equal(Object.keys(vars).length, 9);
+  assert.equal(Object.keys(vars).length, 13);
   const pairs = [
     ['#ffffff', vars.primary], ['#ffffff', vars['primary-dark']], ['#ffffff', vars.ok], ['#ffffff', vars.set], ['#ffffff', vars.sample],
     [vars.text, '#ffffff'], [vars.text, '#f8fafc'], [vars.muted, '#ffffff'], [vars.muted, '#f5f5f5'], [vars['warn-text'], '#fef9c3'],
     [vars.primary, '#ffffff'], [vars.primary, '#e8f1f8'], [vars.ok, '#ffffff'],
-    ['#ffffff', '#374151'], ['#ffffff', '#166534'], ['#ffffff', '#0b5561']
+    ['#ffffff', '#374151'], ['#ffffff', '#166534'], ['#ffffff', '#0b5561'], [vars.text, '#e8f1f8'], [vars.muted, '#f8fafc'],
+    [vars.text, vars['kind-symbol']], [vars.text, vars['kind-digit']], [vars.text, vars['kind-upper']], [vars.text, vars['kind-lower']]
   ];
   for (const [fg, bg] of pairs) assert.ok(ratio(fg, bg) >= 4.5, `${fg} on ${bg}: ${ratio(fg, bg).toFixed(2)}`);
 });
 
 test('the hover colors above are the ones the stylesheet uses, and field borders meet 3:1', () => {
   for (const rule of ['.sample-button:hover { background: #374151; }', '.action-button.copy:hover { background: #166534; }',
-    '.action-button.set:hover { background: #0b5561; }', '.header-button:hover { background: #e8f1f8; }']) {
+    '.action-button.set:hover { background: #0b5561; }', '.header-button:hover { background: #e8f1f8; }', '.small-button:hover { background: #e8f1f8; }',
+    '.method-option:has(input:checked) { border-color: var(--primary); background: #e8f1f8; font-weight: 700; }']) {
     assert.ok(css.includes(rule), rule);
   }
   assert.ok(css.includes('border: 2px solid #64748b;'));

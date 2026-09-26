@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-QuickROT47 is a static web tool for ROT47: each printable ASCII character (codes 33-126) is replaced with the one 47 places further on. Because 47 is half of 94, the same conversion restores the text. It is Day037 of the "100 Security Tools with Generative AI" project. ROT47 is not encryption; the page and README say so.
+QuickROT47 is a static web tool for ROT47: each printable ASCII character (codes 33-126) is replaced with the one 47 places further on. Because 47 is half of 94, the same conversion restores the text. It also switches to ROT13, ROT5, ROT18 and ROT-N, shows the character table of the chosen method, and guesses which method hid a text. It is Day037 of the "100 Security Tools with Generative AI" project. ROT47 is not encryption; the page and README say so.
 
 ## Commands
 
@@ -18,8 +18,14 @@ QuickROT47 is a static web tool for ROT47: each printable ASCII character (codes
 Classic scripts (no modules, so `file://` works), loaded in this order by `index.html`:
 
 - `js/i18n.js` - `I18n`: Japanese and English messages (`I18n.ja`, `I18n.en`), `t(key, values)`, `apply()`, `setLanguage()`. Language order: `?lang=` in the URL, then `localStorage` (`quick-rot47-language`), then the browser language
-- `js/rot-core.js` - `RotCore`: `rot47(text)`, `rotChar(ch)`, `isTarget(ch)`, `isFullWidthAscii(ch)`, `stats(text)` (`changed`, `kept`, `fullWidth`, counted per code point). No DOM, so the tests `require()` it
-- `js/main.js` - page behaviour: convert, live conversion, samples, copy (falls back to selecting the output), "use as input", status messages (one timer), help dialog, language button
+- `js/rot-core.js` - `RotCore`, no DOM, so the tests `require()` it:
+  - Each method is a list of rings (a run of code points) with a shift: `rot47` (33-126 by 47), `rot13` (A-Z, a-z by 13), `rot5` (0-9 by 5), `rot18` (ROT13 + ROT5), `rotn` (letters by N)
+  - `convert(text, method, n)`, `rot47(text)`, `rotChar(ch)`, `normalizeShift(n)` (1-25; 0 and 26 become 13), `isSelfInverse(method, n)`, `inverseShift(n)` (26 - N)
+  - `mapping(method, n)`: every changed character as `{ from, to, kind }` (`symbol`, `digit`, `upper`, `lower`)
+  - `stats(text, method, n)`: `changed`, `kept`, `fullWidth`, counted per code point
+  - `detect(text)`: every distinct result of none/ROT47/ROT13/ROT5/ROT18/ROT-1..25, ranked by `englishScore()`: common English and CTF words (`WORD_COUNT`; digits inside a word read as leetspeak), letter-frequency chi-squared, unusual symbols, and a flag shape (`XXX{...}`, more for known prefixes such as HTB or anything ending in CTF). Scores are not clamped; text without ASCII letters scores `NO_LETTERS`. `tie` marks results that differ only in digits and score the same (ROT13/ROT18, none/ROT5)
+  - The page calls a guess unreliable when the best score is below 0.8 or leads the next different result by less than 0.2 (`js/main.js`)
+- `js/main.js` - page behaviour: method choice, convert, live conversion, samples, copy (falls back to selecting the output), "use as input", status messages (one timer), character table, method guess, help dialog, language button
 
 Each file ends with `if (typeof module !== 'undefined' && module.exports) module.exports = ...` so Node can load it.
 

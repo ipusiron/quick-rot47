@@ -14,43 +14,85 @@
     <div class="header-side"></div>
     <div class="header-title">
       <h1>🔐 QuickROT47</h1>
-      <p data-i18n="app.subtitle">ASCII可視文字を47文字ずらすROT47変換ツール</p>
+      <p data-i18n="app.subtitle">ROT47を中心に、ROT13・ROT5・ROT18・ROT-Nも試せる変換ツール</p>
     </div>
     <div class="header-side header-actions">
-      <button type="button" id="lang-button" class="header-button" data-i18n="app.langButton" data-i18n-aria-label="app.langLabel">English</button>
+      <button type="button" id="lang-button" class="header-button" data-i18n="app.langButton" lang="en">English</button>
       <button type="button" id="help-button" class="header-button" data-i18n-aria-label="help.open" data-i18n-title="help.open">?</button>
     </div>
   </header>
 
   <noscript><p class="noscript">このツールはJavaScriptを使います。 / This tool requires JavaScript.</p></noscript>
 
-  <main class="container">
-    <section class="input-area">
-      <div class="area-header">
-        <label for="input-text" data-i18n="input.label">入力テキスト</label>
-        <div class="sample-buttons">
-          <button type="button" class="sample-button" data-sample="plain" data-i18n="sample.plain">サンプル: Hello World! 123</button>
-          <button type="button" class="sample-button" data-sample="cipher" data-i18n="sample.cipher">サンプル: ROT47の文</button>
+  <main class="page">
+    <div class="container">
+      <fieldset class="method-area">
+        <legend data-i18n="method.legend">変換方式</legend>
+        <div class="method-options">
+          <label class="method-option"><input type="radio" name="method" value="rot47" checked> <span data-i18n="method.rot47">ROT47（記号・数字・英字）</span></label>
+          <label class="method-option"><input type="radio" name="method" value="rot13"> <span data-i18n="method.rot13">ROT13（英字）</span></label>
+          <label class="method-option"><input type="radio" name="method" value="rot5"> <span data-i18n="method.rot5">ROT5（数字）</span></label>
+          <label class="method-option"><input type="radio" name="method" value="rot18"> <span data-i18n="method.rot18">ROT18（英字と数字）</span></label>
+          <label class="method-option"><input type="radio" name="method" value="rotn"> <span data-i18n="method.rotn">ROT-N（英字をN文字ずらす）</span></label>
         </div>
-      </div>
-      <textarea id="input-text" rows="6" spellcheck="false" autocomplete="off" data-i18n-placeholder="input.placeholder"></textarea>
-    </section>
+        <div class="rotn-controls" id="rotn-controls" hidden>
+          <label for="rotn-shift" data-i18n="method.shiftLabel">ずらす数（N）</label>
+          <input type="number" id="rotn-shift" min="1" max="25" step="1" value="3" inputmode="numeric">
+          <button type="button" id="rotn-invert" class="small-button" data-i18n="method.invert">戻す数にする（26−N）</button>
+        </div>
+        <p class="method-note" id="method-note"></p>
+      </fieldset>
 
-    <div class="convert-area">
-      <button type="button" id="convert-button" class="convert-button" data-i18n="convert">🔁 変換する</button>
-      <label class="live-option"><input type="checkbox" id="live-convert"> <span data-i18n="live.label">入力に合わせて変換する</span></label>
+      <section class="input-area">
+        <div class="area-header">
+          <label for="input-text" data-i18n="input.label">入力テキスト</label>
+          <div class="sample-buttons">
+            <button type="button" class="sample-button" data-sample="plain" id="sample-plain">サンプル：Hello World! 123</button>
+            <button type="button" class="sample-button" data-sample="cipher" id="sample-cipher">サンプル：ROT47の文</button>
+          </div>
+        </div>
+        <textarea id="input-text" rows="6" spellcheck="false" autocomplete="off" data-i18n-placeholder="input.placeholder"></textarea>
+      </section>
+
+      <div class="convert-area">
+        <button type="button" id="convert-button" class="convert-button" data-i18n="convert">🔁 変換する</button>
+        <label class="live-option"><input type="checkbox" id="live-convert"> <span data-i18n="live.label">入力に合わせて変換する</span></label>
+      </div>
+
+      <section class="output-area">
+        <label for="output-text" data-i18n="output.label">出力テキスト</label>
+        <textarea id="output-text" rows="6" readonly spellcheck="false"></textarea>
+        <p class="stats" id="stats"></p>
+        <p class="stats warn" id="fullwidth-note" hidden></p>
+        <div class="output-actions">
+          <button type="button" id="copy-button" class="action-button copy" data-i18n="copy">📋 コピー</button>
+          <button type="button" id="set-input-button" class="action-button set" data-i18n="setInput">⬆ 入力テキストにセット</button>
+        </div>
+        <p class="status" id="status" role="status"></p>
+      </section>
     </div>
 
-    <section class="output-area">
-      <label for="output-text" data-i18n="output.label">出力テキスト</label>
-      <textarea id="output-text" rows="6" readonly spellcheck="false"></textarea>
-      <p class="stats" id="stats"></p>
-      <p class="stats warn" id="fullwidth-note" hidden></p>
-      <div class="output-actions">
-        <button type="button" id="copy-button" class="action-button copy" data-i18n="copy">📋 コピー</button>
-        <button type="button" id="set-input-button" class="action-button set" data-i18n="setInput">⬆ 入力テキストにセット</button>
-      </div>
-      <p class="status" id="status" role="status"></p>
+    <section class="container panel" id="map-panel" aria-labelledby="map-title">
+      <h2 id="map-title" data-i18n="map.title">🔤 対応表</h2>
+      <p class="panel-lead" data-i18n="map.caption">各マスは「元の文字→変換後の文字」で、色は元の文字の種類です。入力に含まれる文字は太い枠で示します。</p>
+      <ul class="map-legend">
+        <li class="legend-item kind-symbol" data-i18n="map.kind.symbol">記号</li>
+        <li class="legend-item kind-digit" data-i18n="map.kind.digit">数字</li>
+        <li class="legend-item kind-upper" data-i18n="map.kind.upper">大文字</li>
+        <li class="legend-item kind-lower" data-i18n="map.kind.lower">小文字</li>
+        <li class="legend-item used" data-i18n="map.used">入力に含まれる</li>
+      </ul>
+      <p class="stats" id="map-summary"></p>
+      <ol class="map-grid" id="map-grid"></ol>
+    </section>
+
+    <section class="container panel" id="detect-panel" aria-labelledby="detect-title">
+      <h2 id="detect-title" data-i18n="detect.title">🔎 方式の自動判定</h2>
+      <p class="panel-lead" data-i18n="detect.lead">入力テキストを各方式で変換し、英文として読めそうな順に並べます。</p>
+      <button type="button" id="detect-button" class="convert-button" data-i18n="detect.button">判定する</button>
+      <p class="stats" id="detect-status" role="status"></p>
+      <ol class="detect-list" id="detect-list"></ol>
+      <p class="stats" data-i18n="detect.note">英語の文を前提にした推定です。短い文や英語以外の文では外れることがあります。</p>
     </section>
   </main>
 

@@ -32,7 +32,9 @@ test('every key used by the markup and scripts exists', () => {
   }
   assert.ok(keys.length > 15, String(keys.length));
   for (const key of keys) assert.ok(Object.hasOwn(I18n.ja, key), key);
-  for (const n of [1, 2, 3, 4]) for (const part of ['h', 'p']) assert.ok(Object.hasOwn(I18n.ja, `help.s${n}.${part}`));
+  for (const n of [1, 2, 3, 4, 5, 6]) for (const part of ['h', 'p']) assert.ok(Object.hasOwn(I18n.ja, `help.s${n}.${part}`));
+  // keys built from a method id: 'scope.' + method
+  for (const method of require('../js/rot-core.js').METHOD_IDS) assert.ok(Object.hasOwn(I18n.ja, 'scope.' + method), method);
 });
 
 test('scripts other than the dictionary and the puzzle data contain no Japanese outside comments', () => {

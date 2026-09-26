@@ -15,7 +15,7 @@ const rot13 = s => s.replace(/[A-Za-z]/g, ch => {
 
 // Text between `heading` and the next heading of any level
 function section(text, heading) {
-  const start = text.indexOf(heading);
+  const start = text.indexOf(heading + '\n');         // the whole heading line, not a longer heading that starts the same way
   assert.ok(start >= 0, heading);
   const rest = text.slice(start + heading.length);
   const end = rest.search(/\n#{2,4} /);
@@ -138,4 +138,22 @@ test('claims that did not hold up stay removed', () => {
     assert.ok(!readme.ja.includes(bad), bad);
   }
   for (const bad of ['alt.folklore.computers', 'execCommand']) assert.ok(!readme.en.includes(bad), bad);
+});
+
+test('the method table and the guess examples match the core', () => {
+  const rowsOf = (lang, heading) => section(readme[lang], heading).split('\n').filter(l => l.startsWith('|')).slice(2).map(cells);
+  for (const lang of ['ja', 'en']) assert.ok(readme[lang].includes(String(C.WORD_COUNT)), `${lang}: the word count`);
+  for (const [lang, methods, guesses] of [['ja', '### 方式ごとの対象', '### 判定の例'], ['en', '### What each method changes', '### Examples of guesses']]) {
+    const rows = rowsOf(lang, methods);
+    assert.deepEqual(rows.map(r => r[0].replace(/\*/g, '')), ['ROT47', 'ROT13', 'ROT5', 'ROT18', 'ROT-N'], lang);
+    rows.forEach((r, i) => assert.equal(Number(r[2]), C.mapping(C.METHOD_IDS[i], 3).length, `${lang} ${r[0]}`));
+    const examples = rowsOf(lang, guesses).map(r => r.map(unquote));
+    assert.ok(examples.length >= 4, lang);
+    for (const [cipher, name, plain] of examples) {
+      const best = C.detect(cipher)[0];
+      assert.equal(best.text, plain, `${lang} ${plain}`);
+      const expected = best.method === 'rotn' ? 'ROT-' + best.n : best.method.toUpperCase();
+      assert.ok(name === expected || name.startsWith(expected + ' ') || name.startsWith(expected + '（'), `${lang} ${plain}: ${name}`);
+    }
+  }
 });
