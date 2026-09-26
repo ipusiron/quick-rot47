@@ -237,8 +237,8 @@ This makes ROT47 an **involution**: the same operation converts and restores.
 ### Origin of the name
 
 The earliest surviving record of the name ROT47 is a post to fj.kanji, a newsgroup on JUNET, the Japanese netnews network, in July 1987 (dated 23 July, GMT).
-Applying ROT13 to a kanji article of the time changed only the kanji bytes that happened to fall in the range of Latin letters, so the text could still be roughly guessed. In that post, Toshikazu Wada of Tokyo Institute of Technology presented "ROT47", a method suggested by Akinori Saitoh of Osaka University (affiliations as of 1987): rotate the 94 byte values 0x21-0x7E by 47. Both bytes of a JIS kanji fall in 0x21-0x7E, so rotating each byte by 47 turns most level-1 kanji into level-2 kanji, and the text becomes unreadable at a glance.
-Two days later Saitoh added the conversion to jnews, a newsreader he had been modifying. His formula is the same as today's ROT47. The intended use was the same as ROT13's: hiding jokes and spoilers.
+In a JIS-encoded kanji article of the time, ROT13 changed only the bytes that fell in the Latin-letter range, so kana still looked like kana, kanji like kanji, and the content could be roughly guessed. In that post, Toshikazu Wada of Tokyo Institute of Technology presented "ROT47", a method suggested by Akinori Saitoh of Osaka University (affiliations as of 1987): rotate the 94 byte values 0x21-0x7E by 47. Both bytes of a JIS kanji fall in 0x21-0x7E, so rotating each byte by 47 turns most level-1 kanji into level-2 kanji, and the text becomes unreadable at a glance.
+Two days later Saitoh added the conversion to jnews, a newsreader he had been modifying (originally vnews by Kenneth Almquist). His formula is the same as today's ROT47. The intended use was the same as ROT13's: hiding jokes and spoilers.
 In September 1987, "ROT13/47" was proposed: ROT13 for Latin letters and ROT47 for JIS kanji. That scheme survives as the `-r` option of nkf, a Japanese character-code converter.
 Primary sources do not show when people began applying ROT47 to text made only of ASCII letters, digits and symbols, which is how it is used today.
 
@@ -436,7 +436,7 @@ The tests check the following. GitHub Actions runs them on every push and pull r
 
 ---
 
-## Related Resources
+## 📚 Related Resources
 
 ### Tools (ones I worked on)
 
