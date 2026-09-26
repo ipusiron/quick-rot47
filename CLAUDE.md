@@ -4,39 +4,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-QuickROT47 is a lightweight web-based ROT47 cipher tool that transforms ASCII visible characters (33-126) by shifting them 47 positions. This is a simple, static HTML/CSS/JavaScript application with no build process or dependencies.
+QuickROT47 is a static web tool for ROT47: each printable ASCII character (codes 33-126) is replaced with the one 47 places further on. Because 47 is half of 94, the same conversion restores the text. It is Day037 of the "100 Security Tools with Generative AI" project. ROT47 is not encryption; the page and README say so.
 
-## Development Commands
+## Commands
 
-This is a static website project with no build system:
-- **Run locally**: Open `index.html` directly in a browser or use a local web server
-- **Deploy**: Push to GitHub and enable GitHub Pages (already configured at https://ipusiron.github.io/quick-rot47/)
-- **No build/test/lint commands** - Pure HTML/CSS/JavaScript with no dependencies
+- **Run locally**: open `index.html` (works from `file://`) or serve the folder with any static server
+- **Test**: `npm test` (runs `node --test`; no dependencies to install)
+- **Deploy**: GitHub Pages from the main branch (https://ipusiron.github.io/quick-rot47/)
+- **CI**: `.github/workflows/test.yml` runs `npm test` on push and pull_request
 
 ## Architecture
 
-### Core Implementation
-The ROT47 algorithm is implemented in `script.js:2-11`:
-- Takes ASCII characters in range 33-126
-- Shifts each character by 47 positions within the 94-character range
-- Non-printable ASCII characters are left unchanged
+Classic scripts (no modules, so `file://` works), loaded in this order by `index.html`:
 
-### File Structure
-- `index.html` - Main UI with two textareas (input/output) and conversion buttons
-- `script.js` - Contains ROT47 algorithm and UI interaction handlers
-- `style.css` - Styling for the interface
-- `assets/` - Contains screenshots and images
+- `js/i18n.js` - `I18n`: Japanese and English messages (`I18n.ja`, `I18n.en`), `t(key, values)`, `apply()`, `setLanguage()`. Language order: `?lang=` in the URL, then `localStorage` (`quick-rot47-language`), then the browser language
+- `js/rot-core.js` - `RotCore`: `rot47(text)`, `rotChar(ch)`, `isTarget(ch)`, `isFullWidthAscii(ch)`, `stats(text)` (`changed`, `kept`, `fullWidth`, counted per code point). No DOM, so the tests `require()` it
+- `js/main.js` - page behaviour: convert, live conversion, samples, copy (falls back to selecting the output), "use as input", status messages (one timer), help dialog, language button
 
-### Key Functions
-- `rot47()` in `script.js:2` - Core ROT47 transformation logic
-- `convertText()` in `script.js:15` - Handles button click to transform input text
-- `copyResult()` in `script.js:22` - Copies output to clipboard (uses modern Clipboard API with `document.execCommand` fallback)
-- `showToast()` in `script.js:45` - Displays temporary notification messages
-- `setToInput()` in `script.js:62` - Copies output back to input for re-encoding
-- `setSampleText()` in `script.js:72` - Populates input with sample text "Hello World! 123"
+Each file ends with `if (typeof module !== 'undefined' && module.exports) module.exports = ...` so Node can load it.
 
-## Important Notes
+## Rules for Changes
 
-- ROT47 is reversible - applying it twice returns the original text
-- No external dependencies or frameworks are used
-- Project is part of a "100 Security Tools with AI" initiative
+- Keep the CSP in `index.html` strict (`default-src 'none'`; no inline scripts, styles or event handlers)
+- No `innerHTML`, `.style.` writes, `alert`/`confirm`, `window.open`, `execCommand` or network access (`test/html.test.js` checks this)
+- Every UI string goes through `I18n` in both languages; `test/i18n.test.js` checks that the key sets match
+- Colors are `:root` variables in `style.css`; text colors must stay at 4.5:1 or more (`test/contrast.test.js`)
+- Buttons stay at least 44px high
+- Lines stay under 160 characters (`test/format.test.js`)
+- `README.md` and `README.en.md` are generated from templates outside this repository; `test/readme.test.js` checks their examples against `RotCore`, so update both READMEs when behaviour changes
