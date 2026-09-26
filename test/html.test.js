@@ -50,6 +50,18 @@ test('the core does not use the DOM', () => {
   }
 });
 
+test('method choice, character table and method guess', () => {
+  const R = require('../js/rot-core.js');
+  const radios = [...html.matchAll(/<input type="radio" name="method" value="([^"]+)"/g)].map(m => m[1]);
+  assert.deepEqual(radios, R.METHOD_IDS, 'one radio per method, in the same order');
+  assert.match(html, /<fieldset class="method-area">\s*<legend/);
+  assert.match(html, /<input type="radio" name="method" value="rot47" checked>/);
+  assert.match(html, /<label for="rotn-shift"[^>]*>[\s\S]*?<input type="number" id="rotn-shift" min="1" max="25"/);
+  assert.match(html, /<ol class="map-grid" id="map-grid"><\/ol>/);
+  assert.match(html, /<p class="stats" id="detect-status" role="status"><\/p>/);
+  for (const id of ['map-panel', 'detect-panel']) assert.match(html, new RegExp(`id="${id}" aria-labelledby="`), id);
+});
+
 test('script order: dictionary, core and store before the UI', () => {
   const order = [...html.matchAll(/<script src="js\/([^"]+)"/g)].map(m => m[1]);
   assert.deepEqual(order, ['i18n.js', 'rot-core.js', 'main.js']);

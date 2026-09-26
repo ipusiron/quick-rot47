@@ -9,6 +9,10 @@
   --muted: #4b5563;            /* on #ffffff 7.56:1 */
   --warn-text: #854d0e;        /* on #fef9c3 6.38:1 */
   --focus: #005fa3;
+  --kind-symbol: #fde68a;      /* cell backgrounds under --text */
+  --kind-digit: #bbf7d0;
+  --kind-upper: #bfdbfe;
+  --kind-lower: #e9d5ff;
 }
 
 * { box-sizing: border-box; }
@@ -75,6 +79,45 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 }
 @media (max-width: 480px) { .container { margin: 0.5rem 0.5rem 1rem; padding: 1rem; } }
 
+/* ---------- Method ---------- */
+.method-area { margin: 0 0 1.2rem; padding: 0; border: none; }
+.method-area legend { padding: 0; margin-bottom: 0.4rem; font-weight: 700; }
+.method-options { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.method-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0 0.8rem;
+  border: 2px solid #64748b;
+  border-radius: 22px;
+  font-weight: 400;
+  cursor: pointer;
+}
+.method-option:has(input:checked) { border-color: var(--primary); background: #e8f1f8; font-weight: 700; }
+.method-option input { width: 18px; height: 18px; margin: 0; accent-color: var(--primary); }
+.rotn-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.6rem; }
+.rotn-controls input {
+  width: 5rem;
+  min-height: 44px;
+  padding: 0 0.5rem;
+  border: 2px solid #64748b;
+  border-radius: 8px;
+  color: var(--text);
+}
+.method-note { margin: 0.5rem 0 0; color: var(--muted); font-size: 0.9rem; }
+.small-button {
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+.small-button:hover { background: #e8f1f8; }
+
 .area-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; }
 label { font-weight: 700; }
 .sample-buttons { display: flex; flex-wrap: wrap; gap: 0.4rem; }
@@ -121,6 +164,53 @@ textarea {
 .stats { margin: 0.4rem 0 0; color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
 .stats.warn { padding: 0.4rem 0.6rem; border-radius: 6px; background: #fef9c3; color: var(--warn-text); }
 .status { margin: 0.5rem 0 0; min-height: 1.7em; color: var(--ok); font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+
+/* ---------- Panels: character table and method guess ---------- */
+.panel h2 { margin: 0 0 0.4rem; font-size: 1.25rem; }
+.panel-lead { margin: 0 0 0.6rem; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.4rem; padding: 0; list-style: none; }
+.legend-item { padding: 0.1rem 0.6rem; border: 1px solid #94a3b8; border-radius: 6px; background: #ffffff; font-size: 0.9rem; }
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.2rem, 1fr));
+  gap: 0.3rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.map-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.2rem;
+  min-height: 2.4rem;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, "Noto Sans Mono", monospace;
+}
+.kind-symbol { background: var(--kind-symbol); }
+.kind-digit { background: var(--kind-digit); }
+.kind-upper { background: var(--kind-upper); }
+.kind-lower { background: var(--kind-lower); }
+.map-cell.used, .legend-item.used { border: 3px solid var(--text); font-weight: 700; }
+.map-from, .map-to { min-width: 1ch; text-align: center; }
+.map-arrow { color: var(--text); }
+
+.detect-list { margin: 0.8rem 0 0.4rem; padding: 0; list-style: none; }
+.detect-item { margin: 0 0 0.6rem; padding: 0.7rem 0.9rem; border: 1px solid #94a3b8; border-radius: 8px; }
+.detect-item.best { border: 2px solid var(--ok); }
+.detect-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.8rem; }
+.detect-meter { width: 8rem; height: 0.9rem; }
+.detect-badge { padding: 0 0.5rem; border-radius: 6px; background: var(--ok); color: #ffffff; font-size: 0.85rem; font-weight: 700; }
+.detect-preview {
+  margin: 0.4rem 0;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  background: #f8fafc;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, "Noto Sans Mono", monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 
 /* ---------- Dialog ---------- */
 .modal {
