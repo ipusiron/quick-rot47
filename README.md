@@ -13,10 +13,10 @@ description_en: "A simple web tool for instantly encoding and decoding text usin
 
 category_ja:
   - 現代暗号
-  - エンコーダー
+  - 符号化
 category_en:
   - Modern Cryptography
-  - Encoder
+  - Encoding
 
 difficulty: 1
 
