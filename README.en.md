@@ -358,6 +358,20 @@ Because it also rotates digits and symbols, its output is harder to read at a gl
 
 ---
 
+## 🎯 Use cases
+
+### Ways of using this tool in particular
+
+- Confirming the self-inverse transform that returns on a second pass (involution and function classes): ROT47 shifts the 94 printable ASCII characters by 47 (exactly half). `Hello World` becomes `w6==@ (@C=5`, and a second pass returns the original. Shifting by half makes encryption and decryption the same operation (its own inverse, an involution)
+- Confirming that it also converts symbols and digits (the difference from ROT13 classes): applying ROT13 to `Hello World 123!` gives `Uryyb Jbeyq 123!`, leaving digits and symbols as they are. Applying ROT47 gives `w6==@ (@C=5 `abP`, changing digits and symbols too. You can confirm the difference that ROT13 acts only on letters while ROT47 acts on all printable ASCII
+- Confirming that the method splits by the target character set (encoding classes): ROT5 shifts only digits by 5 (`12345` to `67890`), and ROT18 shifts letters and digits (`Hello 123` to `Uryyb 678`). All shift by half, so they return on a second pass. You can confirm that the method splits by which character set it targets
+
+### General uses
+
+- Learn how ROT13 and ROT47 work and the difference between encoding and encryption
+- Use it as a cover to temporarily hide an answer or a spoiler on a board or a review
+- Make or read light ROT-family transforms in puzzles and CTFs
+
 ## 🔢 Relatives of ROT13 and ROT47
 
 ### ROT for digits
