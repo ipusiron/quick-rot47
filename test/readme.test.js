@@ -157,3 +157,19 @@ test('the method table and the guess examples match the core', () => {
     }
   }
 });
+
+test('ユースケースの「このツールならではの使い方」を rot-core.js で再計算（日英）', () => {
+  const C = require('../js/rot-core.js');
+  assert.equal(C.rot47('Hello World'), 'w6==@ (@C=5');
+  assert.equal(C.rot47(C.rot47('Hello World 123!')), 'Hello World 123!');
+  assert.equal(C.SIZE, 94);
+  assert.equal(C.SHIFT, 47);
+  assert.equal(C.convert('Hello World 123!', 'rot13'), 'Uryyb Jbeyq 123!');
+  assert.equal(C.convert('Hello World 123!', 'rot47'), 'w6==@ (@C=5 `abP');
+  assert.equal(C.convert('12345', 'rot5'), '67890');
+  assert.equal(C.convert('Hello 123', 'rot18'), 'Uryyb 678');
+  for (const md of [readme.ja, readme.en]) {
+    assert.ok(md.includes('w6==@ (@C=5') && md.includes('Uryyb Jbeyq 123!'));
+    assert.ok(md.includes('67890') && md.includes('94'));
+  }
+});
